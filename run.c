@@ -1,22 +1,12 @@
 /* Inference for Llama-2 Transformer model in pure C */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <time.h>
-#include <math.h>
-#include <string.h>
-#include <fcntl.h>
-#if defined _WIN32
-    #include "win.h"
-#else
-    #include <unistd.h>
-    #include <sys/mman.h>
-#endif
+#include <stdint.h>
+#include "run.h"
+
 // ----------------------------------------------------------------------------
 // Transformer model
 
-typedef struct {
+typedef struct Config {
     int dim; // transformer dimension
     int hidden_dim; // for ffn layers
     int n_layers; // number of layers
@@ -26,7 +16,7 @@ typedef struct {
     int seq_len; // max sequence length
 } Config;
 
-typedef struct {
+typedef struct TransformerWeights{
     // token embedding table
     float* token_embedding_table;    // (vocab_size, dim)
     // weights for rmsnorms
@@ -47,7 +37,7 @@ typedef struct {
     float* wcls;
 } TransformerWeights;
 
-typedef struct {
+typedef struct RunState {
     // current wave of activations
     float *x; // activation at current time stamp (dim,)
     float *xb; // same, but inside a residual branch (dim,)
@@ -64,7 +54,7 @@ typedef struct {
     float* value_cache; // (layer, seq_len, dim)
 } RunState;
 
-typedef struct {
+struct Transformer {
     Config config; // the hyperparameters of the architecture (the blueprint)
     TransformerWeights weights; // the weights of the model
     RunState state; // buffers for the "wave" of activations in the forward pass
@@ -72,7 +62,7 @@ typedef struct {
     int fd; // file descriptor for memory mapping
     float* data; // memory mapped data pointer
     ssize_t file_size; // size of the checkpoint file in bytes
-} Transformer;
+};
 
 void malloc_run_state(RunState* s, Config* p) {
     // we calloc instead of malloc to keep valgrind happy
@@ -376,14 +366,14 @@ typedef struct {
     int id;
 } TokenIndex;
 
-typedef struct {
+struct Tokenizer{
     char** vocab;
     float* vocab_scores;
     TokenIndex *sorted_vocab;
     int vocab_size;
     unsigned int max_token_length;
     unsigned char byte_pieces[512]; // stores all single-byte strings
-} Tokenizer;
+};
 
 int compare_tokens(const void *a, const void *b) {
     return strcmp(((TokenIndex*)a)->str, ((TokenIndex*)b)->str);
@@ -586,13 +576,13 @@ typedef struct {
     int index;
 } ProbIndex; // struct used when sorting probabilities during top-p sampling
 
-typedef struct {
+struct Sampler {
     int vocab_size;
     ProbIndex* probindex; // buffer used in top-p sampling
     float temperature;
     float topp;
     unsigned long long rng_state;
-} Sampler;
+};
 
 int sample_argmax(float* probabilities, int n) {
     // return the index that has the highest probability

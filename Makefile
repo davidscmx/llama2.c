@@ -4,12 +4,12 @@ CC = gcc
 
 # the most basic way of building that is most likely to work on most systems
 .PHONY: run
-run: run.c
+run: run.c run.h
 	$(CC) -O3 -o run run.c -lm
 
 # useful for a debug build, can then e.g. analyze with valgrind, example:
 # $ valgrind --leak-check=full ./run out/model.bin -n 3
-rundebug: run.c
+rundebug: run.c run.h
 	$(CC) -g -o run run.c -lm
 
 # https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
@@ -22,47 +22,42 @@ rundebug: run.c
 # It turns off -fsemantic-interposition.
 # In our specific application this is *probably* okay to use
 .PHONY: runfast
-runfast: run.c
+runfast: run.c run.h
 	$(CC) -Ofast -o run run.c -lm
 
 # additionally compiles with OpenMP, allowing multithreaded runs
 # make sure to also enable multiple threads when running, e.g.:
 # OMP_NUM_THREADS=4 ./run out/model.bin
 .PHONY: runomp
-runomp: run.c
+runomp: run.c run.h
 	$(CC) -Ofast -fopenmp -march=native run.c  -lm  -o run
 
 .PHONY: win64
-win64:
+win64: run.c run.h
 	x86_64-w64-mingw32-gcc -Ofast -D_WIN32 -o run.exe -I. run.c win.c
 
 # compiles with gnu99 standard flags for amazon linux, coreos, etc. compatibility
 .PHONY: rungnu
-rungnu:
+rungnu: run.c run.h
 	$(CC) -Ofast -std=gnu11 -o run run.c -lm
 
 .PHONY: runompgnu
-runompgnu:
+runompgnu: run.c run.h
 	$(CC) -Ofast -fopenmp -std=gnu11 run.c  -lm  -o run
 
 # run all tests
 .PHONY: test
-test:
+test: run.c run.h
 	pytest
 
 # run only tests for run.c C implementation (is a bit faster if only C code changed)
 .PHONY: testc
-testc:
+testc: run.c run.h
 	pytest -k runc
 
 # run the C tests, without touching pytest / python
 # to increase verbosity level run e.g. as `make testcc VERBOSITY=1`
 VERBOSITY ?= 0
 .PHONY: testcc
-testcc:
-	$(CC) -DVERBOSITY=$(VERBOSITY) -O3 -o testc test.c -lm
-	./testc
-
-.PHONY: clean
-clean:
-	rm -f run
+testcc: run.c run.h
+	$(CC) -DVERB
