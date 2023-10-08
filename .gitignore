@@ -1,2 +1,9 @@
 run
 stories110M.bin
+
+
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.so*
+llama2c_exe

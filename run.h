@@ -28,3 +28,4 @@ void free_sampler(Sampler* sampler);
 void free_tokenizer(Tokenizer* t);
 void free_transformer(Transformer* transformer);
 
+int llama2c(int argc, char *argv[]);

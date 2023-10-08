@@ -901,10 +901,16 @@ void error_usage() {
 }
 
 int main(int argc, char *argv[]) {
+    int return_value = llama2c(argc, argv);
+    return 0;
+}
+
+
+int llama2c(int argc, char *argv[]){
 
     // default parameters
     char *checkpoint_path = NULL;  // e.g. out/model.bin
-    char *tokenizer_path = "tokenizer.bin";
+    char *tokenizer_path = "llama2.c/tokenizer.bin";
     float temperature = 1.0f;   // 0.0 = greedy deterministic. 1.0 = original. don't set higher
     float topp = 0.9f;          // top-p in nucleus sampling. 1.0 = off. 0.9 works well, but slower
     int steps = 256;            // number of steps to run for
@@ -913,11 +919,26 @@ int main(int argc, char *argv[]) {
     char *mode = "generate";    // generate|chat
     char *system_prompt = NULL; // the (optional) system prompt to use in chat mode
 
+    printf("argc: %d\n", argc);
+    for (int i = 0; i < argc; i++) {
+        printf("argv in c[%d]: %s\n", i, argv[i]);
+    }
+
     // poor man's C argparse so we can override the defaults above from the command line
-    if (argc >= 2) { checkpoint_path = argv[1]; } else { error_usage(); }
+    if (argc >= 2) {
+        printf("Less than or equal than two args\n");
+        checkpoint_path = argv[1];
+    }
+    else {
+        printf("Less than or equal than two args failing\n");
+        error_usage();
+    }
     for (int i = 2; i < argc; i+=2) {
         // do some basic validation
-        if (i + 1 >= argc) { error_usage(); } // must have arg after flag
+        if (i + 1 >= argc) {
+
+            error_usage();
+        } // must have arg after flag
         if (argv[i][0] != '-') { error_usage(); } // must start with dash
         if (strlen(argv[i]) != 2) { error_usage(); } // must be -x (one dash, one letter)
         // read in the args
@@ -967,4 +988,5 @@ int main(int argc, char *argv[]) {
     free_transformer(&transformer);
     return 0;
 }
+
 #endif
